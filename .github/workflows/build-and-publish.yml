@@ -62,6 +62,7 @@ jobs:
         run: |
           UPSTREAM_VERSION=$(node -p "require('./package.json').version")
           npm pkg set name=@golee/codice-fiscale-js
+          npm pkg set repository.url=git+https://github.com/GoleeTeam/CodiceFiscaleJS.git
           npm version "${UPSTREAM_VERSION}-golee.${{ github.run_number }}" --no-git-tag-version
 
       - name: Publish
