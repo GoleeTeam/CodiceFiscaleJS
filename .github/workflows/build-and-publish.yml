@@ -1,4 +1,4 @@
-name: Publish
+name: Build and publish
 
 on:
   push:
@@ -65,6 +65,6 @@ jobs:
           npm version "${UPSTREAM_VERSION}-golee.${{ github.run_number }}" --no-git-tag-version
 
       - name: Publish
-        run: npm publish --access public --tag latest
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm install -g npm@11.5.1
+          npm publish --access public --tag latest
