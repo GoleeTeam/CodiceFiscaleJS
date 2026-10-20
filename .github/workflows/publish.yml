@@ -1,0 +1,70 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    needs: build
+
+    if: github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, '[skip-publish]')
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Rename and version for Golee
+        run: |
+          UPSTREAM_VERSION=$(node -p "require('./package.json').version")
+          npm pkg set name=@golee/codice-fiscale-js
+          npm version "${UPSTREAM_VERSION}-golee.${{ github.run_number }}" --no-git-tag-version
+
+      - name: Publish
+        run: npm publish --access public --tag latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
