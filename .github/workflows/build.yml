@@ -1,0 +1,89 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-22.04
+
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Setup: npm"
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: "Setup: Node"
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Linting
+        run: pnpm run lint
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-22.04
+    needs: build
+
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+    permissions:
+      id-token: write
+      contents: write
+
+    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip-publish]')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Setup: pnpm"
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: "Setup: Node"
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: "Release: Prepare"
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github'
+          pnpm version patch
+
+      - name: Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish
+        run: |
+          npm install -g npm@11.5.1
+          pnpm publish --no-git-checks
+
+      - name: "Release: Perform"
+        run: git push --follow-tags --no-verify
