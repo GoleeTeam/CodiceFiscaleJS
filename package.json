@@ -41,7 +41,8 @@
     "standard": "standard",
     "rename": "node utils.js",
     "webpack": "webpack",
-    "update_comuni": "node update_comuni.js"
+    "update_comuni": "node update_comuni.js",
+    "lint": "true"
   },
   "author": "Luca Vandro <lucavandro@gmail.com>",
   "contributors": [
